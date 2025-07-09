@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DishCreateRequest;
 use App\Models\Dish;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class DishesController extends Controller
@@ -25,7 +27,8 @@ class DishesController extends Controller
      */
     public function create()
     {
-        //
+        $categories = Category::all();
+        return view('kitchen.dish_create', compact('categories'));
     }
 
     /**
@@ -34,9 +37,20 @@ class DishesController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(DishCreateRequest $request)
     {
-        //
+        $dish = new Dish();
+        $dish->name = $request->name;
+        $dish->category_id = $request->category;
+
+        $imageName = date('YmdHis') . "." . request()->dish_image->getClientOriginalExtension();
+        request()->dish_image->move(public_path('images'), $imageName );
+
+        $dish->image = $imageName;
+
+        $dish->save();
+
+        return redirect('dish')->with('message', 'Dish created successfully');
     }
 
     /**
@@ -56,9 +70,10 @@ class DishesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit( Dish $dish)
     {
-        //
+        $categories = Category::all();
+        return  view('kitchen.dish_edit', compact('dish', 'categories'));
     }
 
     /**
@@ -68,9 +83,21 @@ class DishesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Dish $dish)
     {
-        //
+         request()->validate([
+            'name' => 'required',
+            'category' => 'required',
+        ]);
+        $dish->name = $request->name;
+        $dish->category_id = $request->category;
+        if( $request->dish_image ){
+            $imageName = date('YmdHis') . "." . request()->dish_image->getClientOriginalExtension();
+            request()->dish_image->move(public_path('images'), $imageName );
+            $dish->image = $imageName;
+        }
+        $dish->save();
+        return redirect('dish')->with('message', 'Dish updated successfully');
     }
 
     /**
@@ -79,8 +106,9 @@ class DishesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy( Dish $dish )
     {
-        //
+        $dish->delete();
+        return redirect('dish')->with('message', 'Dish removed successfully');
     }
 }
